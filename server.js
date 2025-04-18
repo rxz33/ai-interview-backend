@@ -26,7 +26,7 @@ const Interview = mongoose.model("Interview", interviewSchema);
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-app.post("/generate-qa", async (req, res) => {
+app.post("/api/interview-questions", async (req, res) => {
   try {
     const { jobType, workExperience, companyType, location } = req.body;
 
