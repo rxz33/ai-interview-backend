@@ -1,0 +1,24 @@
+{
+  "name": "ai-interview-generator",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@google/generative-ai": "^0.22.0",
+    "axios": "^1.8.4",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "mongoose": "^8.11.0",
+    "openai": "^4.86.1",
+    "react": "^19.1.0",
+    "react-icons": "^5.5.0",
+    "react-spinners": "^0.16.1"
+  }
+}
