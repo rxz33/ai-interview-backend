@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: ai-interview-backend
+    env: node
+    plan: starter
+    buildCommand: npm install
+    startCommand: node server.js
+    envVars:
+      - key: PORT
+        value: "10000"  # Default port used by Render
+      - key: GEMINI_API_KEY
+        sync: false  # You'll add this manually during deployment
+      - key: MONGO_URI
+        sync: false  # Add MongoDB URI manually during deployment
+    region: oregon  # Choose the region closest to your users
+    healthCheckPath: /health  # Path to check app health (explained below)
