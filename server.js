@@ -10,9 +10,13 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
-mongoose.connect("mongodb://127.0.0.1:27017/interview_db")
+mongoose.connect(process.env.MONGODB_URI)
   .then(() => console.log("✅ Connected to MongoDB"))
   .catch(err => console.error("❌ MongoDB connection error:", err));
+
+// mongoose.connect("mongodb://127.0.0.1:27017/interview_db")
+//   .then(() => console.log("✅ Connected to MongoDB"))
+//   .catch(err => console.error("❌ MongoDB connection error:", err));
 
 const interviewSchema = new mongoose.Schema({
   jobType: String,
