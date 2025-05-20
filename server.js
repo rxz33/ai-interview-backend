@@ -40,20 +40,21 @@ app.post("/api/interview-questions", async (req, res) => {
     const { jobType, workExperience, companyType, location } = req.body;
 
     const prompt = `
-Please generate exactly 10 distinct interview questions for a ${jobType} role, with complete answers.
-The questions should be a mix of:
-1. Technical questions
-2. Behavioral questions
-3. Situational questions
-Ensure that each question has a full answer and is relevant to the ${jobType} role.
-Format strictly like:
+Generate exactly 10 diverse interview questions with answers for a ${jobType} role.
+
+Context:
+- Work Experience: ${workExperience} years
+- Preferred Location: ${location}
+- Target Company Type: ${companyType}
+
+Include:
+- 4 Technical questions
+- 3 Behavioral questions
+- 3 Situational questions
+
+Format strictly as:
 1. Question
 Answer: Full answer here.
-
-2. Question
-Answer: Full answer here.
-
-(Use "Answer:" before every answer.)
 `;
 
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
