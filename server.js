@@ -4,20 +4,28 @@ const cors = require("cors");
 const dotenv = require("dotenv");
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 
+// Load environment variables
 dotenv.config();
 
 const app = express();
 app.use(express.json());
 app.use(cors());
 
-mongoose.connect(process.env.MONGODB_URI)
+// ✅ Check and use MongoDB URI
+const mongoURI = process.env.MONGODB_URI;
+if (!mongoURI) {
+  console.error("❌ MONGODB_URI not found in .env. Please set it before running the server.");
+  process.exit(1);
+}
+
+mongoose.connect(mongoURI)
   .then(() => console.log("✅ Connected to MongoDB"))
-  .catch(err => console.error("❌ MongoDB connection error:", err));
+  .catch(err => {
+    console.error("❌ MongoDB connection error:", err);
+    process.exit(1);
+  });
 
-// mongoose.connect("mongodb://127.0.0.1:27017/interview_db")
-//   .then(() => console.log("✅ Connected to MongoDB"))
-//   .catch(err => console.error("❌ MongoDB connection error:", err));
-
+// Define schema and model
 const interviewSchema = new mongoose.Schema({
   jobType: String,
   workExperience: String,
@@ -28,12 +36,17 @@ const interviewSchema = new mongoose.Schema({
 
 const Interview = mongoose.model("Interview", interviewSchema);
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+// ✅ Check and use Gemini API key
+const geminiApiKey = process.env.GEMINI_API_KEY;
+if (!geminiApiKey) {
+  console.error("❌ GEMINI_API_KEY not found in .env. Please set it before running the server.");
+  process.exit(1);
+}
+const genAI = new GoogleGenerativeAI(geminiApiKey);
 
 app.get('/health', (req, res) => {
   res.status(200).send('OK');
 });
-
 
 app.post("/api/interview-questions", async (req, res) => {
   try {
@@ -71,13 +84,12 @@ Answer: Full answer here.
     const text = await response.response.text();
     console.log("Full response text:\n", text);
 
-    // 💥 New parsing logic
-    const qaBlocks = text.split(/\n(?=\d+\.\s)/); // Split where "1. ", "2. ", etc. starts
+    const qaBlocks = text.split(/\n(?=\d+\.\s)/);
     const qaList = [];
 
     qaBlocks.forEach(block => {
-      const questionMatch = block.match(/\d+\.\s*(.+?)\n/); // First line after number
-      const answerMatch = block.match(/Answer:\s*([\s\S]*)/); // Capture everything after "Answer:"
+      const questionMatch = block.match(/\d+\.\s*(.+?)\n/);
+      const answerMatch = block.match(/Answer:\s*([\s\S]*)/);
       if (questionMatch && answerMatch) {
         qaList.push({
           question: questionMatch[1].trim(),
@@ -92,7 +104,6 @@ Answer: Full answer here.
       return res.status(500).json({ error: "Failed to parse questions properly." });
     }
 
-    // Save to MongoDB
     try {
       const newEntry = new Interview({
         jobType,
