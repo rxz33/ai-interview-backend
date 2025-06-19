@@ -110,7 +110,7 @@ Answer: Full answer here.
         jobType,
         workExperience,
         companyType,
-        location,
+        topic,
         questions: qaList,
       });
       await newEntry.save();
