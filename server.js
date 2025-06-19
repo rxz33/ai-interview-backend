@@ -11,7 +11,7 @@ app.use(express.json());
 app.use(cors());
 
 // ✅ MongoDB Setup
-const mongoURI = process.env.MONGO_URI;
+const mongoURI = process.env.MONGODB_URI;
 if (!mongoURI) {
   console.error("❌ MONGODB_URI not found in .env. Please set it before running the server.");
   process.exit(1);
