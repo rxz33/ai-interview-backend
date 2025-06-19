@@ -78,8 +78,8 @@ Answer: Full answer here.
     } catch (err) {
       console.error("⚠️ Gemini API Error:", err);
 
-      if (err.status === 429) {
-        return res.status(500).json({
+      if (err.status === 429 || err.message.includes("quota")) {
+        return res.status(503).json({
           error: "Gemini API quota exceeded. Please try again later or upgrade your plan.",
           retryAfter: err.errorDetails?.find(d => d['@type'] === 'type.googleapis.com/google.rpc.RetryInfo')?.retryDelay || "60s"
         });
