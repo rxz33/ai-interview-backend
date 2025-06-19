@@ -54,12 +54,12 @@ app.get('/health', (req, res) => {
 // ✅ Main Interview Route
 app.post("/api/interview-questions", async (req, res) => {
   try {
-    const { jobType, workExperience, companyType, topic } = req.body;
+    const { jobType, workExperience, companyType, topic, difficulty } = req.body;
 
 const prompt = `
 You are an expert AI system designed to create high-quality interview questions and answers.
 
-Generate **exactly 10** interview questions for the role of **${jobType}** with the following background:
+Generate **exactly 10**${difficulty} level interview questions for the role of **${jobType}** with the following background:
 
 - Candidate's Experience: **${workExperience} years**
 - Focus Topic: **${topic}**
