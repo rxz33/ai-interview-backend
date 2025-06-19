@@ -54,14 +54,14 @@ app.get('/health', (req, res) => {
 // ✅ Main Interview Route
 app.post("/api/interview-questions", async (req, res) => {
   try {
-    const { jobType, workExperience, companyType, location } = req.body;
+    const { jobType, workExperience, companyType, topic } = req.body;
 
     const prompt = `
 Generate exactly 10 diverse interview questions with answers for a ${jobType} role.
 
 Context:
 - Work Experience: ${workExperience} years
-- Preferred Location: ${location}
+- Preferred Topic: ${topic}
 - Target Company Type: ${companyType}
 
 Include:
