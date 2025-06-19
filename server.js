@@ -4,14 +4,13 @@ const cors = require("cors");
 const dotenv = require("dotenv");
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 
-// Load environment variables
 dotenv.config();
 
 const app = express();
 app.use(express.json());
 app.use(cors());
 
-// ✅ Check and use MongoDB URI
+// ✅ MongoDB Setup
 const mongoURI = process.env.MONGODB_URI;
 if (!mongoURI) {
   console.error("❌ MONGODB_URI not found in .env. Please set it before running the server.");
@@ -25,7 +24,7 @@ mongoose.connect(mongoURI)
     process.exit(1);
   });
 
-// Define schema and model
+// ✅ Interview Schema
 const interviewSchema = new mongoose.Schema({
   jobType: String,
   workExperience: String,
@@ -33,10 +32,9 @@ const interviewSchema = new mongoose.Schema({
   location: String,
   questions: [{ question: String, answer: String }],
 });
-
 const Interview = mongoose.model("Interview", interviewSchema);
 
-// ✅ Check and use Gemini API key
+// ✅ Gemini Setup
 const geminiApiKey = process.env.GEMINI_API_KEY;
 if (!geminiApiKey) {
   console.error("❌ GEMINI_API_KEY not found in .env. Please set it before running the server.");
@@ -44,10 +42,12 @@ if (!geminiApiKey) {
 }
 const genAI = new GoogleGenerativeAI(geminiApiKey);
 
+// ✅ Health Route
 app.get('/health', (req, res) => {
   res.status(200).send('OK');
 });
 
+// ✅ Main Interview Route
 app.post("/api/interview-questions", async (req, res) => {
   try {
     const { jobType, workExperience, companyType, location } = req.body;
@@ -72,18 +72,26 @@ Answer: Full answer here.
 
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
 
-    const response = await model.generateContent(prompt).catch(err => {
-      console.error("Error generating content from Gemini API:", err);
-      return null;
-    });
+    let response;
+    try {
+      response = await model.generateContent(prompt);
+    } catch (err) {
+      console.error("⚠️ Gemini API Error:", err);
 
-    if (!response) {
+      if (err.status === 429) {
+        return res.status(503).json({
+          error: "Gemini API quota exceeded. Please try again later or upgrade your plan.",
+          retryAfter: err.errorDetails?.find(d => d['@type'] === 'type.googleapis.com/google.rpc.RetryInfo')?.retryDelay || "60s"
+        });
+      }
+
       return res.status(500).json({ error: "Failed to generate questions from Gemini API" });
     }
 
     const text = await response.response.text();
-    console.log("Full response text:\n", text);
+    console.log("📝 Gemini Response:\n", text);
 
+    // Parse Q&A pairs
     const qaBlocks = text.split(/\n(?=\d+\.\s)/);
     const qaList = [];
 
@@ -98,12 +106,12 @@ Answer: Full answer here.
       }
     });
 
-    console.log(`Extracted ${qaList.length} question-answer pairs.`);
-
     if (qaList.length === 0) {
-      return res.status(500).json({ error: "Failed to parse questions properly." });
+      console.error("❌ Failed to parse questions properly.");
+      return res.status(500).json({ error: "Failed to parse Gemini response properly." });
     }
 
+    // Save to DB
     try {
       const newEntry = new Interview({
         jobType,
@@ -113,16 +121,17 @@ Answer: Full answer here.
         questions: qaList,
       });
       await newEntry.save();
+      console.log("✅ Questions saved to MongoDB.");
     } catch (err) {
-      console.error("MongoDB Save Error:", err);
+      console.error("❌ MongoDB Save Error:", err);
       return res.status(500).json({ error: "Failed to save interview questions" });
     }
 
     res.json({ questions: qaList });
 
   } catch (error) {
-    console.error("Error generating questions:", error);
-    res.status(500).json({ error: "Failed to generate questions" });
+    console.error("❌ Unexpected Error:", error);
+    res.status(500).json({ error: "Internal server error" });
   }
 });
 
