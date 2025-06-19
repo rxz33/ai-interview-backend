@@ -56,23 +56,27 @@ app.post("/api/interview-questions", async (req, res) => {
   try {
     const { jobType, workExperience, companyType, topic } = req.body;
 
-    const prompt = `
-Generate exactly 10 diverse interview questions with answers for a ${jobType} role.
+const prompt = `
+You are an expert AI system designed to create high-quality interview questions and answers.
 
-Context:
-- Work Experience: ${workExperience} years
-- Preferred Topic: ${topic}
-- Target Company Type: ${companyType}
+Generate **exactly 10** interview questions for the role of **${jobType}** with the following background:
 
-Include:
-- 4 Technical questions
-- 3 Behavioral questions
-- 3 Situational questions
+- Candidate's Experience: **${workExperience} years**
+- Focus Topic: **${topic}**
+- Target Company Type: **${companyType}** (e.g., Startup, MNC, Remote-first)
 
-Format strictly as:
+Ensure:
+- 4 **Technical** questions (role-specific, challenging, covering the topic if relevant)
+- 3 **Behavioral** questions (based on soft skills, values, team collaboration)
+- 3 **Situational** questions (real-world workplace scenarios and decision-making)
+
+Each entry must be formatted exactly like this:
 1. Question
-Answer: Full answer here.
+Answer: <Full answer in 4–6 lines>
+
+Only return the list of Q&A without extra comments or intro.
 `;
+
 
     const chatResponse = await openai.chat.completions.create({
       model: "llama3-70b-8192", // Groq’s best model
