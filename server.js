@@ -2,7 +2,7 @@ const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
 const dotenv = require("dotenv");
-const { GoogleGenerativeAI } = require("@google/generative-ai");
+const OpenAI = require("openai");
 
 dotenv.config();
 
@@ -34,13 +34,17 @@ const interviewSchema = new mongoose.Schema({
 });
 const Interview = mongoose.model("Interview", interviewSchema);
 
-// ✅ Gemini Setup
-const geminiApiKey = process.env.GEMINI_API_KEY;
-if (!geminiApiKey) {
-  console.error("❌ GEMINI_API_KEY not found in .env. Please set it before running the server.");
+// ✅ Groq/OpenAI Setup
+const groqApiKey = process.env.GROQ_API_KEY;
+if (!groqApiKey) {
+  console.error("❌ GROQ_API_KEY not found in .env. Please set it before running the server.");
   process.exit(1);
 }
-const genAI = new GoogleGenerativeAI(geminiApiKey);
+
+const openai = new OpenAI({
+  apiKey: groqApiKey,
+  baseURL: "https://api.groq.com/openai/v1", // Important for Groq
+});
 
 // ✅ Health Route
 app.get('/health', (req, res) => {
@@ -70,28 +74,18 @@ Format strictly as:
 Answer: Full answer here.
 `;
 
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
+    const chatResponse = await openai.chat.completions.create({
+      model: "mixtral-8x7b-32768", // Groq’s best model
+      messages: [
+        { role: "system", content: "You are an expert interview question generator." },
+        { role: "user", content: prompt },
+      ],
+      temperature: 0.7,
+    });
 
-    let response;
-    try {
-      response = await model.generateContent(prompt);
-    } catch (err) {
-      console.error("⚠️ Gemini API Error:", err);
+    const text = chatResponse.choices[0].message.content;
+    console.log("📝 Groq Response:\n", text);
 
-      if (err.status === 429 || err.message.includes("quota")) {
-        return res.status(503).json({
-          error: "Gemini API quota exceeded. Please try again later or upgrade your plan.",
-          retryAfter: err.errorDetails?.find(d => d['@type'] === 'type.googleapis.com/google.rpc.RetryInfo')?.retryDelay || "60s"
-        });
-      }
-
-      return res.status(500).json({ error: "Failed to generate questions from Gemini API" });
-    }
-
-    const text = await response.response.text();
-    console.log("📝 Gemini Response:\n", text);
-
-    // Parse Q&A pairs
     const qaBlocks = text.split(/\n(?=\d+\.\s)/);
     const qaList = [];
 
@@ -108,10 +102,9 @@ Answer: Full answer here.
 
     if (qaList.length === 0) {
       console.error("❌ Failed to parse questions properly.");
-      return res.status(500).json({ error: "Failed to parse Gemini response properly." });
+      return res.status(500).json({ error: "Failed to parse Groq response properly." });
     }
 
-    // Save to DB
     try {
       const newEntry = new Interview({
         jobType,
